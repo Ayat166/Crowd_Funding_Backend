@@ -1,5 +1,7 @@
 from django.db import models
 from users.models import User
+from django.utils import timezone
+
 
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -17,6 +19,8 @@ class Project(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
 
     def __str__(self):
         return self.title
