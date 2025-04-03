@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from django.db import models
 from .models import *
 from .serializers import *
+from django.http import JsonResponse
 
-# Create your views here.
 class HomeProjectView (APIView):
     def get (self , request):
         latest_projects = Project.objects.all().order_by('-start_time')[:5]
@@ -18,3 +18,13 @@ class HomeProjectView (APIView):
         }
 
         return Response(data)
+    
+def get_categories(request):
+    categories = Category.objects.all().values("id", "name")
+    return JsonResponse(list(categories), safe=False)
+
+def category_projects(request, category_id):
+    category = Category.objects.get(id=category_id)
+    projects = Project.objects.filter(category=category)
+    if not projects: return JsonResponse({'message': 'No projects found for this category'}, status=200)
+    return JsonResponse({'projects': list(projects.values())})

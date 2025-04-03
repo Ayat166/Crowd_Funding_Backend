@@ -5,5 +5,7 @@ from .views import *
 urlpatterns = [
    
    path('home/' , HomeProjectView.as_view() , name='home'),
+   path("categories/", get_categories, name="get_categories"),
+   path("category/<int:category_id>/", category_projects, name="category_projects"),
     
 ]
