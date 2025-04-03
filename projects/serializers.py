@@ -2,9 +2,10 @@ from rest_framework import serializers
 from .models import *
 
 class ProjectImagesSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(use_url=True)
     class Meta:
         model = ProjectImage
-        fields = ['image']
+        fields = ['id','image']
 
 class ProjectSerializer(serializers.ModelSerializer):
     images=ProjectImagesSerializer(many=True, read_only=True)

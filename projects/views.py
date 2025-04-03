@@ -4,8 +4,9 @@ from rest_framework.response import Response
 from django.db import models
 from .models import *
 from .serializers import *
+from django.http import JsonResponse
+from django.db.models import Q
 
-# Create your views here.
 class HomeProjectView (APIView):
     def get (self , request):
         latest_projects = Project.objects.all().order_by('-start_time')[:5]
@@ -18,3 +19,29 @@ class HomeProjectView (APIView):
         }
 
         return Response(data)
+    
+def get_categories(request):
+    categories = Category.objects.all().values("id", "name")
+    return JsonResponse(list(categories), safe=False)
+
+def category_projects(request, category_id):
+    category = Category.objects.get(id=category_id)
+    projects = Project.objects.filter(category=category)
+    serialized_projects = ProjectSerializer(projects, many=True).data
+    return JsonResponse({'projects': serialized_projects}, safe=False)
+
+class SearchProjectsView(APIView):
+    def get(self, request):
+        search_term = request.GET.get('query', '').strip()  #search term from query parameters
+        print(f"Search query: {search_term}")
+
+        projects = Project.objects.all()
+
+        if search_term:
+            projects = projects.filter(
+                Q(tags__icontains=search_term) | 
+                Q(category__name__icontains=search_term) 
+            )
+
+        serializer = ProjectSerializer(projects, many=True)
+        return Response(serializer.data)
