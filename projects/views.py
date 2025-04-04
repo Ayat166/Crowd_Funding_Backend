@@ -11,11 +11,12 @@ from rest_framework.parsers import MultiPartParser, FormParser
 class ProjectListCreateView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [AllowAny]  # For testing, change to IsAuthenticated later
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can create projects
     parser_classes = [MultiPartParser, FormParser]  # Allows handling of image uploads
 
     def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)  # Assuming you want to associate the creator with the logged-in user
+        # Automatically set the creator to the logged-in user
+        serializer.save(creator=self.request.user)
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
@@ -26,7 +27,7 @@ class CancelProjectView(generics.UpdateAPIView):
     """Cancel project if donations are < 25% of total target."""
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [AllowAny]  # Just for testing, change later to [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
         project = self.get_object()
