@@ -13,12 +13,18 @@ class Project(models.Model):
     details = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     total_target = models.DecimalField(max_digits=10, decimal_places=2)
+    current_donations = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # New field
+    image = models.ImageField(upload_to='projects/', blank=True, null=True)
     tags = models.CharField(max_length=255)  # Comma-separated tags
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     total_donations = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     avg_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)  # New field for average rating
+
+    def is_below_25_percent(self):
+        """Check if donations are less than 25% of the total target."""
+        return self.current_donations < (self.total_target * 0.25)
 
     def __str__(self):
         return self.title

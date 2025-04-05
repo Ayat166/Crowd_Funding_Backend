@@ -27,3 +27,14 @@ class RatingSerializer(serializers.ModelSerializer):
         if Rating.objects.filter(user=user, project=project).exists():
             raise serializers.ValidationError("You have already rated this project.")
         return data
+from .models import Project, ProjectImage
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = '__all__'  # Include all fields
+
+class ProjectImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectImage
+        fields = '__all__'
