@@ -17,11 +17,13 @@ class CommentReply(models.Model):
 class Report(models.Model):
     REPORT_CHOICES = [
         ('project', 'Project'),
-        ('comment', 'Comment')
+        ('comment', 'Comment'),
+        ('comment_reply', 'CommentReply')  # Add CommentReply as a report type
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    report_type = models.CharField(max_length=10, choices=REPORT_CHOICES)
+    report_type = models.CharField(max_length=15, choices=REPORT_CHOICES)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, blank=True, null=True)
+    comment_reply = models.ForeignKey('CommentReply', on_delete=models.CASCADE, blank=True, null=True)  # New field
     reason = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
