@@ -25,6 +25,7 @@ class Project(models.Model):
     def is_below_25_percent(self):
         """Check if donations are less than 25% of the total target."""
         return self.current_donations < (self.total_target * 0.25)
+    is_featured = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title

@@ -11,6 +11,12 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -160,7 +166,7 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOW_ALL_ORIGINS = True
+#CORS_ALLOW_ALL_ORIGINS = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -171,3 +177,6 @@ REST_FRAMEWORK = {
     ],
 }
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # ← السماح لـ React Vite بالوصول
+]

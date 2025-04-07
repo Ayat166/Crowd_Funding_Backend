@@ -1,15 +1,12 @@
-from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Rating, Project
-from .serializers import RatingSerializer
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.shortcuts import render, get_object_or_404, redirect
-from .serializers import ProjectSerializer
-from .forms import ProjectForm  # Ensure you create this form in `forms.py`
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from .models import *
+from .serializers import *
+from django.http import JsonResponse
+from django.db.models import Q
 
 
 class RatingListCreateView(APIView):
@@ -59,7 +56,7 @@ class RatingListCreateView(APIView):
 # API Views
 class ProjectListCreateView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
+    serializer_class = ProjectsSerializer
     permission_classes = [IsAuthenticated]  # Ensure only authenticated users can create projects
     parser_classes = [MultiPartParser, FormParser]  # Allows handling of image uploads
 
@@ -69,13 +66,13 @@ class ProjectListCreateView(generics.ListCreateAPIView):
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
+    serializer_class = ProjectsSerializer
     permission_classes = [AllowAny]  # Just for testing, change later to [IsAuthenticated]
 
 class CancelProjectView(generics.UpdateAPIView):
     """Cancel project if donations are < 25% of total target."""
     queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
+    serializer_class = ProjectsSerializer
     permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
@@ -86,21 +83,46 @@ class CancelProjectView(generics.UpdateAPIView):
             return Response({"message": "Project canceled due to low donations."}, status=status.HTTP_200_OK)
         return Response({"error": "Cannot cancel project. Donations are above 25%."}, status=status.HTTP_400_BAD_REQUEST)
 
-# Function-Based Views for Frontend
-def project_list_view(request):
-    projects = Project.objects.all()
-    return render(request, "projects/project_list.html", {"projects": projects})
 
-def project_detail_view(request, pk):
-    project = get_object_or_404(Project, pk=pk)
-    return render(request, "projects/project_detail.html", {"project": project})
 
-def project_create_view(request):
-    if request.method == "POST":
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("project-list")
-    else:
-        form = ProjectForm()
-    return render(request, "projects/project_form.html", {"form": form})
+class HomeProjectView (APIView):
+    def get (self , request):
+        latest_projects = Project.objects.all().order_by('-start_time')[:5]
+        top_raited_projects = Project.objects.all().order_by('-ratings')[:5]
+        featured_projects = Project.objects.filter(is_featured=True)[:5]
+        data={
+            'latest_projects':ProjectSerializer(latest_projects, many=True).data,
+            'top_rated_projects':ProjectSerializer(top_raited_projects, many=True).data,
+            'featured_projects':ProjectSerializer(featured_projects, many=True).data,
+        }
+
+        return Response(data)
+    
+def get_categories(request):
+    categories = Category.objects.all().values("id", "name")
+    return JsonResponse(list(categories), safe=False)
+
+def category_projects(request, category_id):
+    category = Category.objects.get(id=category_id)
+    projects = Project.objects.filter(category=category)
+    serialized_projects = ProjectSerializer(projects, many=True).data
+    return JsonResponse({'projects': serialized_projects}, safe=False)
+
+class SearchProjectsView(APIView):
+    def get(self, request):
+        search_term = request.GET.get('query', '').strip()  #search term from query parameters
+        print(f"Search query: {search_term}")
+
+        projects = Project.objects.all()
+
+        if search_term:
+            projects = projects.filter(
+                Q(tags__icontains=search_term) | 
+                Q(category__name__icontains=search_term) 
+            )
+
+            serializer = ProjectSerializer(projects, many=True)
+            return Response(serializer.data)
+        if not projects: 
+            return JsonResponse({'message': 'No projects found for this category'}, status=200)
+        return JsonResponse({'projects': list(projects.values())})

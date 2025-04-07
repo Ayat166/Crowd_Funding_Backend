@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Rating
+from .models import *
 
 class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()  # Display the username instead of the user ID
@@ -27,9 +27,8 @@ class RatingSerializer(serializers.ModelSerializer):
         if Rating.objects.filter(user=user, project=project).exists():
             raise serializers.ValidationError("You have already rated this project.")
         return data
-from .models import Project, ProjectImage
 
-class ProjectSerializer(serializers.ModelSerializer):
+class ProjectsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = '__all__'  # Include all fields
@@ -38,3 +37,22 @@ class ProjectImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectImage
         fields = '__all__'
+
+class ProjectImagesSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(use_url=True)
+    class Meta:
+        model = ProjectImage
+        fields = ['id','image']
+
+class ProjectSerializer(serializers.ModelSerializer):
+    images=ProjectImagesSerializer(many=True, read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    class Meta:
+        model = Project
+        fields = '__all__'
+
+    def get_average_rating(self, obj):
+        ratings=obj.ratings.all()
+        if ratings.exists():
+            return sum(r.score for r in ratings) / ratings.count()
+        return 0
