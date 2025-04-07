@@ -1,6 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
+import uuid
+from datetime import timedelta
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     
@@ -14,7 +17,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, username, email=None, password=None, **extra_fields):
+    def create_superuser(self, email=None, password=None, **extra_fields):
         """
         Creates and returns a superuser with the necessary fields set.
         """
@@ -22,15 +25,19 @@ class CustomUserManager(BaseUserManager):
             raise ValueError("The Email field must be set")
         
         email = self.normalize_email(email)
-        user = self.model(username=username, email=email, **extra_fields)
-        
+        user = self.model(email=email, **extra_fields)
+        user.username = None
         user.set_password(password)
-        user.is_active = True  # Set is_active to True for superuser
-        user.is_staff = True  # Ensure is_staff is True for superuser
-        user.is_superuser = True  # Ensure is_superuser is True for superuser
+        user.is_active = True  
+        user.is_staff = True 
+        user.is_superuser = True
         user.save(using=self._db)
         return user
-    
+
+
+def default_expiration():
+    return timezone.now() + timedelta(days=1)
+
 class User(AbstractUser):
     username = None
     email = models.EmailField(max_length=200, unique=True)
@@ -40,7 +47,13 @@ class User(AbstractUser):
     facebook_profile = models.URLField(blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
     is_active = models.BooleanField(default=False)  # Activated via email
-    
+    activation_token = models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True)
+    token_expiration = models.DateTimeField(default=default_expiration)
+
+    def generate_activation_token(self):
+        self.activation_token = uuid.uuid4()
+        self.token_expiration = timezone.now() + timedelta(hours=24)
+        self.save()
     
     objects = CustomUserManager() 
     
