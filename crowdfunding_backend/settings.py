@@ -47,6 +47,13 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'users.User'
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'amerak280@gmail.com'  
+EMAIL_HOST_PASSWORD = 'mdunbmdvhfaukoxu'      
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -68,6 +75,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+
 
 ROOT_URLCONF = "crowdfunding_backend.urls"
 
