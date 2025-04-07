@@ -5,10 +5,7 @@ from django.db import models
 from .models import *
 from .serializers import *
 from django.http import JsonResponse
-<<<<<<< HEAD
 from django.db.models import Q
-=======
->>>>>>> f7dc5ade48e5196033bf9d0412c12132acaa8959
 
 class HomeProjectView (APIView):
     def get (self , request):
@@ -30,7 +27,6 @@ def get_categories(request):
 def category_projects(request, category_id):
     category = Category.objects.get(id=category_id)
     projects = Project.objects.filter(category=category)
-<<<<<<< HEAD
     serialized_projects = ProjectSerializer(projects, many=True).data
     return JsonResponse({'projects': serialized_projects}, safe=False)
 
@@ -47,9 +43,8 @@ class SearchProjectsView(APIView):
                 Q(category__name__icontains=search_term) 
             )
 
-        serializer = ProjectSerializer(projects, many=True)
-        return Response(serializer.data)
-=======
-    if not projects: return JsonResponse({'message': 'No projects found for this category'}, status=200)
-    return JsonResponse({'projects': list(projects.values())})
->>>>>>> f7dc5ade48e5196033bf9d0412c12132acaa8959
+            serializer = ProjectSerializer(projects, many=True)
+            return Response(serializer.data)
+        if not projects: 
+            return JsonResponse({'message': 'No projects found for this category'}, status=200)
+        return JsonResponse({'projects': list(projects.values())})
