@@ -77,18 +77,10 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware", 
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # my frontend URL
-]
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-}
 
 
 ROOT_URLCONF = "crowdfunding_backend.urls"
@@ -177,6 +169,8 @@ REST_FRAMEWORK = {
     ],
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # ← السماح لـ React Vite بالوصول
-]
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+

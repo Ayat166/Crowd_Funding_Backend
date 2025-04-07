@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Donation
 from projects.models import Project
 
-class DonationSerializer(serializers.ModelSerializer):
+class Donation_Serializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)  # Keep the user field read-only
     project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())  # Ensure project accepts a project ID
     user_name = serializers.SerializerMethodField()  # Add a field to include the user's name
@@ -13,3 +13,13 @@ class DonationSerializer(serializers.ModelSerializer):
 
     def get_user_name(self, obj):
         return obj.user.username  # Return the username of the user
+
+class DonationSerializer(serializers.ModelSerializer):
+    project_title = serializers.CharField(source='project.title', read_only=True)
+    date_donated = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
+
+    class Meta:
+        model = Donation
+        fields = '__all__'
+
+

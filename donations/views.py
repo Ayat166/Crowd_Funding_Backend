@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Donation
-from .serializers import DonationSerializer
+from .serializers import Donation_Serializer
 from projects.models import Project  # Import the Project model
 
 class DonationListCreateView(APIView):
@@ -21,11 +21,11 @@ class DonationListCreateView(APIView):
             )
 
         donations = Donation.objects.all()
-        serializer = DonationSerializer(donations, many=True)
+        serializer = Donation_Serializer(donations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = DonationSerializer(data=request.data)
+        serializer = Donation_Serializer(data=request.data)
         if serializer.is_valid():
             #print("Valid data received:", serializer.validated_data)  # Debugging line
             project = serializer.validated_data['project']
@@ -63,5 +63,5 @@ class ProjectDonationListView(APIView):
 
         # Fetch and serialize donations for the project
         donations = Donation.objects.filter(project=project)
-        serializer = DonationSerializer(donations, many=True)
+        serializer = Donation_Serializer(donations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
