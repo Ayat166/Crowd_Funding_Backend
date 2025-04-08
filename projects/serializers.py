@@ -29,6 +29,9 @@ class RatingSerializer(serializers.ModelSerializer):
         return data
 
 class ProjectsSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=False)  # Explicitly define the image field
+    creator = serializers.ReadOnlyField(source='creator.username')  # Make creator read-only
+
     class Meta:
         model = Project
         fields = '__all__'  # Include all fields

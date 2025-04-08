@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions
+from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 from .models import *
 from rest_framework.response import Response
@@ -24,7 +25,11 @@ from projects.serializers import ProjectUserSerializer
 
 
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenObtainPairSerializer
 
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 User1 = get_user_model()
 
@@ -86,7 +91,9 @@ def activate_account(request, uidb64, token):
 
 
 class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, pk):
+        
         try:
             user = User.objects.get(id=pk)
         except User.DoesNotExist:
@@ -109,6 +116,7 @@ class ProfileView(APIView):
     
         
 class UserUpdateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     def put(self, request, pk):
         try:
             user = User.objects.get(id=pk)
@@ -124,6 +132,7 @@ class UserUpdateAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)      
             
 class DeleteAccountAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = DeleteAccountSerializer(data=request.data)
 
