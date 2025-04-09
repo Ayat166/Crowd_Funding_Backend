@@ -31,7 +31,7 @@ SECRET_KEY = "django-insecure-fytdf_g&(#tsz59x!6gzn&#+lzeb*kuu-b66&x2_t)jcv)05!n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # React app's origin
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "corsheaders",
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -79,8 +80,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware", 
 ]
-
-
 
 
 ROOT_URLCONF = "crowdfunding_backend.urls"
@@ -170,6 +169,19 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',  # Allow access to all users by default
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ROTATE_REFRESH_TOKENS': True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,  
 }
 
 
