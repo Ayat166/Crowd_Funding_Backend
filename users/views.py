@@ -21,7 +21,8 @@ from django.contrib.auth.hashers import check_password
 from donations.models import Donation
 from donations.serializers import DonationSerializer
 from projects.models import Project
-from projects.serializers import ProjectUserSerializer
+from projects.serializers import ProjectSerializer
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 
 
 
@@ -37,7 +38,7 @@ class RegisterViewset(viewsets.ViewSet):
     permission_classes= [permissions.AllowAny]
     queryset = User1.objects.all()
     serializer_class = RegisterSerializer
-    
+
     def create(self, requests):
         serializer = self.serializer_class(data = requests.data)
         if serializer.is_valid():
@@ -46,16 +47,16 @@ class RegisterViewset(viewsets.ViewSet):
             return Response(serializer.data)
         else:
             return Response(serializer.errors, status=400)
-        
+
 def send_activation_email(user, request):
 
-    token = user.activation_token  
+    token = user.activation_token
     uid = str(user.pk)
     domain = get_current_site(request).domain
     uidb64 = urlsafe_base64_encode(force_bytes(user.id))
     url = reverse('activate_account', kwargs={'uidb64': uidb64, 'token': user.activation_token})
     activation_link = f"http://{domain}/api/users/activate/{uidb64}/{token}/"
-    
+
     subject = "Activate Your Account"
 
     # simple text message body
@@ -67,12 +68,12 @@ def send_activation_email(user, request):
 
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
     print(f"Email sent to {user.email}")
-        
+
 def activate_account(request, uidb64, token):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
-        user = get_object_or_404(User1, pk=uid)  
-        
+        user = get_object_or_404(User1, pk=uid)
+
         if str(user.activation_token) != token:
             return HttpResponse("Invalid activation token.", status=400)
 
@@ -92,18 +93,17 @@ def activate_account(request, uidb64, token):
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request, pk):
-        
-        try:
-            user = User.objects.get(id=pk)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    def get(self, request, id):
+        user = get_object_or_404(User, id=id)
+
+        if request.user.id != user.id:
+            return Response({"error": "You are not authorized to view this profile."}, status=status.HTTP_403_FORBIDDEN)
 
         user_data = UserSerializer(user).data
-        projects = Project.objects.filter(creator_id=pk)
-        donations = Donation.objects.filter(user_id=pk)
+        projects = Project.objects.filter(creator_id=id)
+        donations = Donation.objects.filter(user_id=id)
 
-        projects_data = ProjectUserSerializer(projects, many=True).data
+        projects_data = ProjectSerializer(projects, many=True).data
         donations_data = DonationSerializer(donations, many=True).data
 
         return Response({
@@ -113,42 +113,45 @@ class ProfileView(APIView):
             "projects": projects_data,
             "donations": donations_data,
         }, status=status.HTTP_200_OK)
-    
-        
-class UserUpdateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-    def put(self, request, pk):
-        try:
-            user = User.objects.get(id=pk)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+
+class User_Update_Delete(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    def put(self, request, id):
+        user = get_object_or_404(User, id=id)
+
+        serializer = UserUpdateSerializer(instance=user, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)      
-            
-class DeleteAccountAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-    def post(self, request):
-        serializer = DeleteAccountSerializer(data=request.data)
+        return Response(data={
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, id):
+        user = get_object_or_404(User, id=id)
+
+        if request.user.id != user.id:
+            return Response(
+                {"error": "You are not authorized to delete this account."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = DeleteAccountSerializer(data=request.data, context={'request': request})
 
         if serializer.is_valid():
-            user_id = serializer.validated_data['user_id']
-            password = serializer.validated_data['password']
+            user.delete()
+            return Response(
+                {"message": "Account deleted successfully."},
+                status=status.HTTP_200_OK
+            )
+    
+        return Response(
+            {"errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+    )
 
-            try:
-                user = User.objects.get(id=user_id)
-            except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            if check_password(password, user.password):
-                user.delete()
-                return Response({"message": "Account deleted"}, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "Incorrect password"}, status=status.HTTP_403_FORBIDDEN)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
