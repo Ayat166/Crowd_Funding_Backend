@@ -1,12 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import *
 from .serializers import *
 from django.http import JsonResponse
 from django.db.models import Q
+
 
 
 class RatingListCreateView(APIView):
@@ -67,7 +68,7 @@ class ProjectListCreateView(generics.ListCreateAPIView):
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectsSerializer
-    permission_classes = [AllowAny]  # Just for testing, change later to [IsAuthenticated]
+    permission_classes = [IsAdminUser]  # Just for testing, change later to [IsAuthenticated]
 
 class CancelProjectView(generics.UpdateAPIView):
     """Cancel project if donations are < 25% of total target."""
@@ -126,3 +127,42 @@ class SearchProjectsView(APIView):
         if not projects: 
             return JsonResponse({'message': 'No projects found for this category'}, status=200)
         return JsonResponse({'projects': list(projects.values())})
+
+
+class AdminFeatureProjectView(APIView):
+    permission_classes = [IsAdminUser]  # Only admin users can access this view
+
+    def get(self, request):
+        projects = Project.objects.all()
+        data = [{'id': project.id, 'title': project.title, 'is_featured': project.is_featured} for project in projects]
+        return Response(data)
+
+    def post(self, request):
+        project_id = request.data.get('project_id')
+        is_featured = request.data.get('is_featured')
+
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response({'error': 'Project not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        project.is_featured = is_featured
+        project.save()
+        return Response({'message': f'Project "{project.title}" updated to featured = {is_featured}'}, status=status.HTTP_200_OK)
+    
+class ProjectFeatureUpdateView(generics.UpdateAPIView):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = [IsAdminUser]  
+
+    def patch(self, request, *args, **kwargs):
+        project = self.get_object()
+        is_featured = request.data.get("featured")
+
+        if is_featured is None:
+            return Response({"error": "Missing 'featured' field."}, status=status.HTTP_400_BAD_REQUEST)
+
+        project.featured = is_featured
+        project.save()
+        serializer = self.get_serializer(project)
+        return Response(serializer.data, status=status.HTTP_200_OK)

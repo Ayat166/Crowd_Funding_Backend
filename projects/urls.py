@@ -13,5 +13,8 @@ urlpatterns = [
    path("categories/", get_categories, name="get_categories"),
    path("category/<int:category_id>/", category_projects, name="category_projects"),
    path('search/', SearchProjectsView.as_view(), name='search_projects'),
-    
+
+   path('admin/feature-project/', AdminFeatureProjectView.as_view(), name='admin-feature-project'),
+   path('<int:pk>/', ProjectFeatureUpdateView.as_view(), name='update-project-feature'),
+
 ]
