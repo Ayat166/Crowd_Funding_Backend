@@ -33,6 +33,8 @@ class ProjectsSerializer(serializers.ModelSerializer):
         child=serializers.ImageField(), write_only=True, required=False
     )  # Accept multiple images
 
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())  # Accept category ID
+
     creator = serializers.ReadOnlyField(source='creator.username')
 
     class Meta:
