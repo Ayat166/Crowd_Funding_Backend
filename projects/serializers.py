@@ -28,11 +28,15 @@ class RatingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("You have already rated this project.")
         return data
 
-class ProjectsSerializer(serializers.ModelSerializer):
-    images = serializers.ListField(
-        child=serializers.ImageField(), write_only=True, required=False
-    )  # Accept multiple images
+class ProjectImagesSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(use_url=True)
+    class Meta:
+        model = ProjectImage
+        fields = ['id','image']
 
+
+class ProjectsSerializer(serializers.ModelSerializer):
+    images=ProjectImagesSerializer(many=True, read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())  # Accept category ID
 
     creator = serializers.ReadOnlyField(source='creator.username')
@@ -53,11 +57,6 @@ class ProjectImageSerializer(serializers.ModelSerializer):
         model = ProjectImage
         fields = '__all__'
 
-class ProjectImagesSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(use_url=True)
-    class Meta:
-        model = ProjectImage
-        fields = ['id','image']
 
 
 class ProjectSerializer(serializers.ModelSerializer):

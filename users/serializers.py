@@ -24,6 +24,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'email': self.user.email,
             'first_name': self.user.first_name,
             'last_name': self.user.last_name,
+            'is_superuser': self.user.is_superuser,
+
         }
 
         return data
@@ -60,6 +62,7 @@ class UserSerializer(serializers.ModelSerializer):
             'birthdate',
             'facebook_profile',
             'country',
+            'is_superuser',
         ]
 
 class UserUpdateSerializer(serializers.ModelSerializer):
