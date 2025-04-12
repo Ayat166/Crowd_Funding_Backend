@@ -58,23 +58,23 @@ class RatingListCreateView(APIView):
 class ProjectListCreateView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectsSerializer
-    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can create projects
+    permission_classes = [AllowAny]  # Allow anyone to view the list of projects
     parser_classes = [MultiPartParser, FormParser]  # Allows handling of image uploads
 
     def perform_create(self, serializer):
-        # Automatically set the creator to the logged-in user
+        print("Incoming data:", self.request.data)  # Debugging line
         serializer.save(creator=self.request.user)
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectsSerializer
-    permission_classes = [IsAdminUser]  # Just for testing, change later to [IsAuthenticated]
+    permission_classes = [AllowAny]  # Allow anyone to view project details
 
 class CancelProjectView(generics.UpdateAPIView):
     """Cancel project if donations are < 25% of total target."""
     queryset = Project.objects.all()
     serializer_class = ProjectsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
         project = self.get_object()

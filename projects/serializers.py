@@ -29,12 +29,24 @@ class RatingSerializer(serializers.ModelSerializer):
         return data
 
 class ProjectsSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(required=False)  # Explicitly define the image field
-    creator = serializers.ReadOnlyField(source='creator.username')  # Make creator read-only
+    images = serializers.ListField(
+        child=serializers.ImageField(), write_only=True, required=False
+    )  # Accept multiple images
+
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())  # Accept category ID
+
+    creator = serializers.ReadOnlyField(source='creator.username')
 
     class Meta:
         model = Project
-        fields = '__all__'  # Include all fields
+        fields = '__all__'
+
+    def create(self, validated_data):
+        images = validated_data.pop('images', [])
+        project = Project.objects.create(**validated_data)
+        for image in images:
+            ProjectImage.objects.create(project=project, image=image)
+        return project
 
 class ProjectImageSerializer(serializers.ModelSerializer):
     class Meta:
