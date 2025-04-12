@@ -3,9 +3,10 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 from .models import *
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from django.utils import timezone
-from django.http import HttpResponse
-from django.contrib.auth import get_user_model
+from django.http import HttpResponse, JsonResponse
+from django.contrib.auth import get_user_model,logout
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
@@ -26,8 +27,13 @@ from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 
 
 
+from projects.serializers import ProjectUserSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import force_bytes, force_str
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -51,6 +57,7 @@ class RegisterViewset(viewsets.ViewSet):
 def send_activation_email(user, request):
 
     token = user.activation_token
+    token = user.activation_token  
     uid = str(user.pk)
     domain = get_current_site(request).domain
     uidb64 = urlsafe_base64_encode(force_bytes(user.id))
@@ -91,6 +98,55 @@ def activate_account(request, uidb64, token):
 
 
 
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh_token")
+            if not refresh_token:
+                return Response({"error": "'refresh_token' is required"}, status=400)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+class RequestPasswordReset(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        user = User.objects.filter(email=email).first()
+        if user:
+            token = PasswordResetTokenGenerator().make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            reset_link = f"http://localhost:5173/reset-password/{uid}/{token}"  # Frontend route
+
+            send_mail(
+                "Password Reset Request",
+                f"Click the link to reset your password: {reset_link}",
+                "noreply@example.com",
+                [user.email],
+            )
+        return Response({"message": "a reset link has been sent."}, status=status.HTTP_200_OK)
+    
+class ConfirmPasswordReset(APIView):
+    def post(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({"error": "Invalid link"}, status=400)
+
+        if PasswordResetTokenGenerator().check_token(user, token):
+            password = request.data.get("password")
+            user.set_password(password)
+            user.save()
+            return Response({"message": "Password reset successful"})
+        return Response({"error": "Invalid or expired token"}, status=400)
+    
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, id):

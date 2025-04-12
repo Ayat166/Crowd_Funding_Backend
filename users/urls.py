@@ -19,4 +19,10 @@ urlpatterns = [
     path('activate/<str:uidb64>/<str:token>/', activate_account, name='activate_account'),
     path('<int:id>/', User_Update_Delete.as_view()),
     path('profile/<int:id>/', ProfileView.as_view(), name='user_profile'),
+    path('reset-password/', RequestPasswordReset.as_view(), name='request-password'),
+    path('reset-password-confirm/<uidb64>/<token>/', ConfirmPasswordReset.as_view(), name='confirm-password'),
+    # path('delete-account/', DeleteAccountAPIView.as_view(), name='delete_account_api'),
+    # path('update/<int:pk>/', UserUpdateAPIView.as_view(), name='update_user'),
+    path('profile/<int:pk>/', ProfileView.as_view(), name='user_profile'),
+    path('logout/', LogoutView.as_view(), name='logout_user'),
 ]
