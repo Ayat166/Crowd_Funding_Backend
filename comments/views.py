@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser ,AllowAny
 from rest_framework import status
 from .models import Comment, CommentReply, Report
 from .serializers import CommentSerializer, CommentReplySerializer, ReportSerializer
@@ -13,7 +13,12 @@ class CommentListCreateView(APIView):
     """
     Handles listing all comments for a project and creating a new comment.
     """
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [AllowAny()] # Allow anyone to view the list of projects
+    
+
 
     def get(self, request, project_id):
         # Validate that the project exists

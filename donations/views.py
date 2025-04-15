@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny ,IsAdminUser
 from rest_framework import status
 from .models import Donation
 from .serializers import Donation_Serializer
@@ -10,7 +10,11 @@ class DonationListCreateView(APIView):
     """
     Handles listing all donations and creating a new donation.
     """
-    permission_classes = [IsAuthenticated]  # Require authentication for this view
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [IsAdminUser()] # Allow anyone to view the list of projects
+    
 
     def get(self, request):
         # Restrict access to admin users only
@@ -49,7 +53,7 @@ class ProjectDonationListView(APIView):
     """
     Handles listing all donations for a specific project.
     """
-    permission_classes = [IsAuthenticated]  # Require authentication for this view
+    permission_classes = [AllowAny]  # Require authentication for this view
 
     def get(self, request, project_id):
         # Validate that the project exists

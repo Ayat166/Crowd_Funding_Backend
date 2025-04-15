@@ -7,6 +7,7 @@ from .models import *
 from .serializers import *
 from django.http import JsonResponse
 from django.db.models import Q
+from rest_framework.exceptions import PermissionDenied
 
 
 
@@ -14,7 +15,10 @@ class RatingListCreateView(APIView):
     """
     Handles listing all ratings for a project and creating a new rating.
     """
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [AllowAny()]
 
     def get(self, request, project_id):
         # Validate that the project exists
@@ -58,8 +62,12 @@ class RatingListCreateView(APIView):
 class ProjectListCreateView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectsSerializer
-    permission_classes = [AllowAny]  # Allow anyone to view the list of projects
     parser_classes = [MultiPartParser, FormParser]  # Allows handling of image uploads
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [AllowAny()] # Allow anyone to view the list of projects
+    
 
     def perform_create(self, serializer):
         print("Incoming data:", self.request.data)  # Debugging line
@@ -70,18 +78,25 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProjectsSerializer
     permission_classes = [AllowAny]  # Allow anyone to view project details
 
+
 class CancelProjectView(generics.UpdateAPIView):
     """Cancel project if donations are < 25% of total target."""
     queryset = Project.objects.all()
     serializer_class = ProjectsSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
         project = self.get_object()
+
+        # Check if the requesting user is the creator of the project
+        if project.creator != request.user:
+            raise PermissionDenied("You do not have permission to cancel this project.")
+
         if project.is_below_25_percent():
             project.is_active = False  # Mark as canceled
             project.save()
             return Response({"message": "Project canceled due to low donations."}, status=status.HTTP_200_OK)
+
         return Response({"error": "Cannot cancel project. Donations are above 25%."}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -89,7 +104,7 @@ class CancelProjectView(generics.UpdateAPIView):
 class HomeProjectView (APIView):
     def get (self , request):
         latest_projects = Project.objects.all().order_by('-start_time')[:5]
-        top_raited_projects = Project.objects.all().order_by('-ratings')[:5]
+        top_raited_projects = Project.objects.all().order_by('-avg_rating')[:5]
         featured_projects = Project.objects.filter(is_featured=True)[:5]
         data={
             'latest_projects':ProjectSerializer(latest_projects, many=True).data,

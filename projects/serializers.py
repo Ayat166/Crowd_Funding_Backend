@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-
+from users.serializers import UserSerializer
 class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()  # Display the username instead of the user ID
     class Meta:
@@ -33,24 +33,30 @@ class ProjectImagesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectImage
         fields = ['id','image']
-
-
+        
 class ProjectsSerializer(serializers.ModelSerializer):
-    images=ProjectImagesSerializer(many=True, read_only=True)
-    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())  # Accept category ID
-
-    creator = serializers.ReadOnlyField(source='creator.username')
+    images = serializers.ListField(
+        child=serializers.ImageField(), write_only=True
+    )
+    uploaded_images = ProjectImagesSerializer(source='images', many=True, read_only=True)
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    creator = UserSerializer(read_only=True) 
 
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = ['id', 'title', 'details', 'category', 'creator', 'is_active', 
+                  'total_target', 'total_donations', 'images', 'uploaded_images','avg_rating','current_donations']
+
 
     def create(self, validated_data):
         images = validated_data.pop('images', [])
+        validated_data['is_active'] = True
         project = Project.objects.create(**validated_data)
         for image in images:
             ProjectImage.objects.create(project=project, image=image)
         return project
+
+
 
 class ProjectImageSerializer(serializers.ModelSerializer):
     class Meta:
