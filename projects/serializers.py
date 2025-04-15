@@ -45,7 +45,7 @@ class ProjectsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'title', 'details', 'category', 'creator', 'is_active', 
-                  'total_target', 'total_donations', 'images', 'uploaded_images','avg_rating','current_donations']
+                  'total_target', 'total_donations', 'images', 'uploaded_images','avg_rating','current_donations','start_time','end_time','tags','is_featured']
 
 
     def create(self, validated_data):
